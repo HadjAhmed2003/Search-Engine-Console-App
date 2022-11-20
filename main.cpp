@@ -165,7 +165,9 @@ int main(){
             break;
         }else if(choice == 1){
             string query;
-            cout << "Enter your search "; cin >> query; 
+            cout << "Enter your search "; 
+            cin.ignore();
+            getline(cin,query); 
             print_results(get_websites(query));
         }else{
             cout << "Enter a valid choice\n"; 
