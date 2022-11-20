@@ -1,8 +1,12 @@
 #include<bits/stdc++.h>
 using namespace std;
 unordered_map<string,vector<string>> graph; 
-unordered_map<string,vector<string>> keywords; 
+unordered_map<string,vector<string>> incoming_links; 
+// unordered_map<string,vector<string>> keywords; 
 unordered_map<string,int> impressions; 
+unordered_map<string,int> CTR; 
+unordered_map<string,double> pagerank; 
+unordered_map<string,vector<string>> search_table; 
 void getGraph(){
     fstream fin;
     string colname, line;
@@ -20,6 +24,7 @@ void getGraph(){
                 
             }else{
                 adj.push_back(colname);
+                incoming_links[colname].push_back(start);
             }
         }
         graph[start]=adj; 
@@ -41,17 +46,18 @@ void getKeywords(){
         std::stringstream ss(line);
         bool flag = true;
         string start;
-        vector<string> adj;  
+        // vector<string> adj;  
         while(std::getline(ss, colname, ',')){
             if(flag){
                 start = colname;
                 flag = false;
                 
             }else{
-                adj.push_back(colname);
+                // adj.push_back(colname);
+                search_table[colname].push_back(start);
             }
         }
-        keywords[start]=adj; 
+        // keywords[start]=adj; 
     }
 }
 void getImpressions(){
@@ -67,31 +73,86 @@ void getImpressions(){
         impressions[website] = stoi(impression);
     }
 }
-bool cmp_impression(pair<string,int> const& p1, pair<string,int> const& p2){
+void getCTR(){
+    fstream fin;
+    string colname, line;
+    fin.open("CTR.csv", ios::in);
+    while(std::getline(fin, line))
+    {
+        std::stringstream ss(line);
+        string website, ctr; 
+        getline(ss, website, ','); 
+        getline(ss, ctr, ',');
+        CTR[website] = stoi(ctr);
+    }
+}
+void page_rank(){
+    double size = graph.size();
+    for(auto it=graph.begin(); it!=graph.end(); it++){
+        pagerank[it->first]=1/size;
+    }
+    for(int j=0; j<2; j++){
+        for(auto it=pagerank.begin(); it!=pagerank.end();it++){
+            double temp_rank = 0; 
+            for(int i=0; i<incoming_links[it->first].size(); i++){
+                temp_rank+=(pagerank[incoming_links[it->first][i]]/graph[incoming_links[it->first][i]].size());
+            }
+            it->second = temp_rank; 
+        }
+    }
+}
+bool cmp_score(pair<string,double> const& p1, pair<string,double> const& p2){
     return p1.second>p2.second; 
 }
-vector<pair<string, int>> get_websites(string query){
-    vector<pair<string, int>> result;
-    for(auto it=keywords.begin(); it!= keywords.end(); it++){
-        for(auto itr:it->second){
-            if(itr == query){
-                result.push_back({it->first, impressions[it->first]}); 
-                break;
-            }
-        } 
+vector<pair<string, double>> get_websites(string query){
+    vector<pair<string, double>> final_result;
+    vector<string> result=search_table[query]; 
+    // for(auto it=keywords.begin(); it!= keywords.end(); it++){
+    //     for(auto itr:it->second){
+    //         if(itr == query){
+    //             result.push_back({it->first, impressions[it->first]}); 
+    //             break;
+    //         }
+    //     } 
+    // }
+    for(auto i:result){
+        double score = 0.4*pagerank[i] + (((1-(0.1*impressions[i]/(1+0.1*impressions[i])))*pagerank[i])+ ((1-(0.1*impressions[i]/(1+0.1*impressions[i])))*CTR[i]))*0.6;
+        final_result.push_back({i, score});
     }
-    return result;
+    return final_result;
 } 
-void print_results(vector<pair<string, int>> result){
-    sort(result.begin(), result.end(), cmp_impression); 
+void print_results(vector<pair<string, double>> result){
+    sort(result.begin(), result.end(), cmp_score);
+    int i = 1; 
     for(auto it=result.begin(); it!=result.end(); it++){
-        cout << "- " << it->first << endl;
+        cout << i <<"- " << it->first <<endl;
+        impressions[it->first]++; 
+        i++;
     }
+    int clicked; 
+    cout << "Enter the page you want to click on: ";
+    cin >> clicked; 
+    CTR[result[clicked-1].first]++;
+}
+void update_registry(){
+    fstream fout;
+    fout.open("CTR.csv", ios::out);
+    for(auto it=CTR.begin(); it!=CTR.end(); it++){
+        fout << it->first<<','<<it->second<<'\n';
+    }
+    fout.close();
+    fout.open("impression.csv", ios::out);
+    for(auto it=impressions.begin(); it!=impressions.end(); it++){
+        fout << it->first<<','<<it->second<<'\n';
+    }
+    fout.close();
 }
 int main(){
     getImpressions();
     getGraph();
     getKeywords();
+    getCTR();
+    page_rank();
     cout << "Welcome!\n"; 
     while(true){
         int choice; 
@@ -110,7 +171,6 @@ int main(){
             cout << "Enter a valid choice\n"; 
         }
     }
+    update_registry();
     return 0; 
 }
-
-
