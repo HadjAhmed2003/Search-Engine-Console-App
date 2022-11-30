@@ -147,6 +147,64 @@ void update_registry(){
     }
     fout.close();
 }
+void process_query(string query){
+    if(query[0]=='"'){
+        string new_query=""; 
+        for(int i=1; i<query.length()-1;i++){
+            new_query+=query[i];
+        }
+        print_results(get_websites(new_query));
+        return;
+    }else if(query.find("OR")!=string::npos){
+        string temp;
+        stringstream s(query); 
+        vector<pair<string, double>> result1; 
+        vector<pair<string, double>> result2;
+        getline(s, temp, ' ');
+        result1 = get_websites(temp);
+        getline(s,temp,' ');  
+        getline(s,temp,' ');
+        result2 = get_websites(temp);
+        for(auto it: result1){
+            if(find(result2.begin(), result2.end(), it)==result2.end()){
+                result2.push_back({it.first, it.second}); 
+            }
+        }
+        print_results(result2);
+    }else if(query.find("AND")!=string::npos){
+        string temp;
+        stringstream s(query); 
+        vector<pair<string, double>> result1; 
+        vector<pair<string, double>> result2;
+        vector<pair<string, double>> result;
+        getline(s, temp, ' ');
+        result1 = get_websites(temp);
+        getline(s,temp,' ');  
+        getline(s,temp,' ');
+        result2 = get_websites(temp);
+        for(auto it: result1){
+            if(find(result2.begin(), result2.end(), it)!=result2.end()){
+                result.push_back({it.first, it.second}); 
+            }
+        }
+        print_results(result);
+    }else{
+        string temp;
+        stringstream s(query); 
+        vector<pair<string, double>> result1; 
+        vector<pair<string, double>> result2;
+        getline(s, temp, ' ');
+        result1 = get_websites(temp);
+        getline(s,temp,' ');
+        result2 = get_websites(temp);
+        for(auto it: result1){
+            if(find(result2.begin(), result2.end(), it)==result2.end()){
+                result2.push_back({it.first, it.second}); 
+            }
+        }
+        print_results(result2);
+    }
+}
 int main(){
     getImpressions();
     getGraph();
@@ -168,7 +226,7 @@ int main(){
             cout << "Enter your search "; 
             cin.ignore();
             getline(cin,query); 
-            print_results(get_websites(query));
+            process_query(query);
         }else{
             cout << "Enter a valid choice\n"; 
         }
