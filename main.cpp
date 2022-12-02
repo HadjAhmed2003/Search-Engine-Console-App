@@ -119,20 +119,24 @@ vector<pair<string, double>> get_websites(string query){
         double score = 0.4*pagerank[i] + (((1-(0.1*impressions[i]/(1+0.1*impressions[i])))*pagerank[i])+ ((1-(0.1*impressions[i]/(1+0.1*impressions[i])))*CTR[i]))*0.6;
         final_result.push_back({i, score});
     }
+    sort(final_result.begin(), final_result.end(), cmp_score);
     return final_result;
 } 
 void print_results(vector<pair<string, double>> result){
-    sort(result.begin(), result.end(), cmp_score);
     int i = 1; 
+    cout << "Search results:\n";
     for(auto it=result.begin(); it!=result.end(); it++){
         cout << i <<"- " << it->first <<endl;
         impressions[it->first]++; 
         i++;
     }
     int clicked; 
-    cout << "Enter the page you want to click on: ";
+    cout << "Enter the page you want to click on else enter 0: ";
     cin >> clicked; 
-    CTR[result[clicked-1].first]++;
+    if(clicked){
+        cout << "You are now viewing: " << result[clicked-1].first <<  endl;
+        CTR[result[clicked-1].first]++;
+    }
 }
 void update_registry(){
     fstream fout;
@@ -153,8 +157,18 @@ void process_query(string query){
         for(int i=1; i<query.length()-1;i++){
             new_query+=query[i];
         }
-        print_results(get_websites(new_query));
-        return;
+        vector<pair<string, double>> result=get_websites(new_query);
+        while(true){
+            int choice; 
+            print_results(result); 
+            cout << "Enter 1 to go back to the search results or 0 to exit\n";
+            cin >> choice; 
+            if(choice){
+                continue;
+            }else{
+                break;
+            }
+        }
     }else if(query.find("OR")!=string::npos){
         string temp;
         stringstream s(query); 
@@ -170,7 +184,17 @@ void process_query(string query){
                 result2.push_back({it.first, it.second}); 
             }
         }
-        print_results(result2);
+        while(true){
+            int choice; 
+            print_results(result2); 
+            cout << "Enter 1 to go back to the search results or 0 to exit\n";
+            cin >> choice; 
+            if(choice){
+                continue;
+            }else{
+                break;
+            }
+        }
     }else if(query.find("AND")!=string::npos){
         string temp;
         stringstream s(query); 
@@ -187,7 +211,17 @@ void process_query(string query){
                 result.push_back({it.first, it.second}); 
             }
         }
-        print_results(result);
+        while(true){
+            int choice; 
+            print_results(result); 
+            cout << "Enter 1 to go back to the search results or 0 to exit\n";
+            cin >> choice; 
+            if(choice){
+                continue;
+            }else{
+                break;
+            }
+        }
     }else{
         string temp;
         stringstream s(query); 
@@ -202,7 +236,17 @@ void process_query(string query){
                 result2.push_back({it.first, it.second}); 
             }
         }
-        print_results(result2);
+        while(true){
+            int choice; 
+            print_results(result2); 
+            cout << "Enter 1 to go back to the search results or 0 to exit\n";
+            cin >> choice; 
+            if(choice){
+                continue;
+            }else{
+                break;
+            }
+        }
     }
 }
 int main(){
